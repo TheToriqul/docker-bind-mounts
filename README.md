@@ -40,9 +40,6 @@ graph TB
     D -->|"Bind Mount (Read-Write)"| G
     F -->|Configures| E
     E -->|Writes| G
-
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style E fill:#bbf,stroke:#333,stroke-width:2px
 ```
 ## 💻 Technical Stack
 
