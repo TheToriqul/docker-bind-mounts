@@ -1,156 +1,215 @@
-# Docker Bind Mounts - Command Reference Guide
-
-- [Basic Operations](#basic-operations)
-- [Configuration Management](#configuration-management)
-- [Container Operations](#container-operations)
-- [File Management](#file-management)
-- [Troubleshooting](#troubleshooting)
+# Docker Bind Mounts Command Reference Guide
 
 > **Author**: Md Toriqul Islam  
-> **Description**: Reference commands for Docker bind mount operations  
-> **Note**: These are reference commands. Always verify paths and parameters before execution.
+> **Description**: Comprehensive command reference for Docker bind mount operations and NGINX configuration  
+> **Learning Focus**: Docker storage management, Linux file systems, and NGINX configuration  
+> **Note**: Review and understand each command before execution in production environments.
 
-## Basic Operations
+- [Section 1: Docker Volume Operations](#section-1-docker-volume-operations)
+- [Section 2: Container Configuration](#section-2-container-configuration)
+- [Section 3: NGINX Service Operations](#section-3-nginx-service-operations)
+- [Section 4: Mount Monitoring](#section-4-mount-monitoring)
+- [Section 5: File System Maintenance](#section-5-file-system-maintenance)
+- [Section 6: Security Operations](#section-6-security-operations)
+- [Section 7: Performance Optimization](#section-7-performance-optimization)
 
-### Creating Host Files
+## Section 1: Docker Volume Operations
+
+### Basic Bind Mount Operations
 ```bash
-# Create log file
-touch ~/example.log
+# Create container with bind mount
+docker run -d \
+    --name nginx-server \
+    -v /host/path:/container/path:ro \
+    nginx:latest
 
-# Create NGINX configuration
-cat > ~/example.conf <<EOF
+# List all mounts for a container
+docker inspect -f '{{.Mounts}}' container_name
+
+# Remove container with volume
+docker rm -v container_name
+```
+
+### Advanced Mount Operations
+```bash
+# Multiple bind mounts with different permissions
+docker run -d \
+    --name nginx-advanced \
+    -v /host/config:/etc/nginx/conf.d:ro \
+    -v /host/logs:/var/log/nginx:rw \
+    -v /host/html:/usr/share/nginx/html:ro \
+    nginx:latest
+
+# Create named volume with bind mount
+docker volume create --driver local \
+    --opt type=none \
+    --opt device=/host/path \
+    --opt o=bind \
+    volume_name
+```
+
+## Section 2: Container Configuration
+
+### NGINX Configuration
+```bash
+# Validate NGINX configuration
+docker exec nginx-server nginx -t
+
+# Reload NGINX configuration
+docker exec nginx-server nginx -s reload
+
+# Create custom NGINX configuration
+cat > nginx.conf << EOF
 server {
     listen 80;
     server_name localhost;
-    access_log /var/log/nginx/custom.host.access.log main;
+    root /usr/share/nginx/html;
+    
     location / {
-        root /usr/share/nginx/html;
-        index index.html index.htm;
+        index index.html;
     }
 }
 EOF
 ```
 
-### Setting Environment Variables
+### Container Environment Setup
 ```bash
-# Define source and destination paths
-CONF_SRC=~/example.conf
-CONF_DST=/etc/nginx/conf.d/default.conf
-LOG_SRC=~/example.log
-LOG_DST=/var/log/nginx/custom.host.access.log
-```
+# Set environment variables
+export NGINX_HOST=localhost
+export NGINX_PORT=80
 
-## Configuration Management
-
-### Basic Container with Bind Mounts
-```bash
-# Run container with bind mounts
-docker run -d --name diaweb \
-    --mount type=bind,src=${CONF_SRC},dst=${CONF_DST} \
-    --mount type=bind,src=${LOG_SRC},dst=${LOG_DST} \
-    -p 8000:80 \
+# Create container with environment variables
+docker run -d \
+    --name nginx-env \
+    -e NGINX_HOST=${NGINX_HOST} \
+    -e NGINX_PORT=${NGINX_PORT} \
     nginx:latest
 ```
 
-### Read-Only Configuration
-```bash
-# Run container with read-only configuration
-docker run -d --name diaweb \
-    --mount type=bind,src=${CONF_SRC},dst=${CONF_DST},readonly=true \
-    --mount type=bind,src=${LOG_SRC},dst=${LOG_DST} \
-    -p 8000:80 \
-    nginx:latest
-```
-
-## Container Operations
+## Section 3: Service Operations
 
 ### Container Management
 ```bash
-# Stop container
-docker stop diaweb
+# Start NGINX container
+docker start nginx-server
 
-# Remove container
-docker rm -f diaweb
+# Stop NGINX container
+docker stop nginx-server
 
-# List running containers
-docker ps
+# Restart NGINX container
+docker restart nginx-server
 
-# List all containers
-docker ps -a
+# Check container logs
+docker logs -f nginx-server
 ```
 
-### Container Interaction
+### Process Control
 ```bash
-# Execute command in container
-docker exec diaweb command
+# Check NGINX process
+docker exec nginx-server ps aux | grep nginx
 
-# Access container shell
-docker exec -it diaweb /bin/bash
-
-# View container logs
-docker logs diaweb
+# Send signals to NGINX
+docker exec nginx-server nginx -s [stop|quit|reload|reopen]
 ```
 
-## File Management
+## Section 4: Mount Monitoring
 
-### Checking Mount Points
+### Mount Status
 ```bash
-# View mount details
-docker inspect diaweb | grep -A 10 Mounts
+# View mount points
+docker inspect -f '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}' nginx-server
 
-# Check bind mount source
-docker inspect -f '{{ .HostConfig.Binds }}' diaweb
+# Check bind mount permissions
+ls -la /host/path
+
+# Monitor mount point usage
+df -h /host/path
 ```
 
-### File Operations
+### Log Management
 ```bash
-# Check NGINX configuration
-docker exec diaweb nginx -t
+# View NGINX access logs
+tail -f /host/logs/access.log
 
-# View log file contents
-tail -f ~/example.log
+# View NGINX error logs
+tail -f /host/logs/error.log
 
-# Check file permissions
-ls -l ~/example.conf
-ls -l ~/example.log
+# Rotate log files
+logrotate /etc/logrotate.d/nginx
 ```
 
-## Troubleshooting
+## Section 5: File System Maintenance
 
-### Common Diagnostics
+### Routine Maintenance
 ```bash
-# Check NGINX status
-docker exec diaweb service nginx status
+# Check file system status
+df -h
+du -sh /host/path
 
-# Test NGINX configuration
-docker exec diaweb nginx -t
+# Clean old logs
+find /host/logs -type f -name "*.log" -mtime +30 -delete
 
-# View real-time logs
-docker logs -f diaweb
-
-# Check mount points
-docker inspect -f '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}' diaweb
+# Backup mounted volumes
+tar -czf backup.tar.gz /host/path
 ```
 
-### Network Verification
+## Section 6: Security Operations
+
+### Permission Management
 ```bash
-# Test NGINX accessibility
-curl http://localhost:8000
+# Set correct permissions
+chmod 644 /host/config/*.conf
+chmod 755 /host/html
+chmod 766 /host/logs
 
-# Check port mapping
-docker port diaweb
-
-# View network settings
-docker inspect diaweb | grep -A 20 NetworkSettings
+# Change ownership
+chown -R nginx:nginx /host/logs
 ```
 
-### Permission Issues
+### Security Checks
 ```bash
-# Check file ownership
-ls -l ${CONF_SRC}
-ls -l ${LOG_SRC}
+# Audit file permissions
+find /host/path -type f -ls
 
-# Modify file permissions if needed
-chmod 644 ${CONF_SRC}
-chmod 666 ${LOG_SRC}
+# Check SELinux context
+ls -Z /host/path
+
+# Verify mount options
+mount | grep /host/path
 ```
+
+## Section 7: Performance Optimization
+
+### Cache Management
+```bash
+# Clear NGINX cache
+docker exec nginx-server rm -rf /var/cache/nginx/*
+
+# Set up cache directory
+docker exec nginx-server mkdir -p /var/cache/nginx
+```
+
+### Resource Management
+```bash
+# Monitor container resources
+docker stats nginx-server
+
+# Update container resources
+docker update --memory 512m --cpus 2 nginx-server
+```
+
+## Learning Notes
+
+1. Bind mounts provide direct host-container file system integration
+2. Read-only mounts enhance security
+3. Proper permission management is crucial
+4. Regular monitoring prevents storage issues
+5. Backup strategies are essential for data safety
+
+---
+
+> 💡 **Best Practice**: Always use specific paths and versions in production environments
+
+> ⚠️ **Warning**: Incorrect bind mount permissions can lead to security vulnerabilities
+
+> 📝 **Note**: Test configuration changes in development before applying to production
