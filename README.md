@@ -126,7 +126,8 @@ graph TB
 
 ```bash
 git clone https://github.com/TheToriqul/docker-bind-mounts.git
-cd docker-bind-mounts```
+cd docker-bind-mounts
+```
 
 2. Set environment variables:
 
