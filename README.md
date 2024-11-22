@@ -97,8 +97,8 @@ graph TB
 5. Security Implementation
 
 ## 🔄 Future Enhancements
-
-<details><summary>View Planned Improvements</summary>
+<details>
+<summary>View Planned Improvements</summary>
 
 1. Automated Mount Point Management
 2. Enhanced Security Protocols
